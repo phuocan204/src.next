@@ -21,6 +21,7 @@ import org.chromium.chrome.browser.app.bluetooth.BluetoothNotificationService;
 import org.chromium.chrome.browser.app.usb.UsbNotificationService;
 import org.chromium.chrome.browser.bluetooth.BluetoothNotificationManager;
 import org.chromium.chrome.browser.media.MediaCaptureNotificationServiceImpl;
+import org.chromium.chrome.browser.media.VideoAssistantController;
 import org.chromium.chrome.browser.policy.PolicyAuditor;
 import org.chromium.chrome.browser.policy.PolicyAuditorJni;
 import org.chromium.chrome.browser.usb.UsbNotificationManager;
@@ -161,6 +162,7 @@ final class TabWebContentsDelegateAndroidImpl extends TabWebContentsDelegateAndr
     @Override
     public void enterFullscreenModeForTab(boolean prefersNavigationBar, boolean prefersStatusBar) {
         mDelegate.enterFullscreenModeForTab(prefersNavigationBar, prefersStatusBar);
+        VideoAssistantController.showForTab(mTab);
     }
 
     @Override
@@ -171,6 +173,7 @@ final class TabWebContentsDelegateAndroidImpl extends TabWebContentsDelegateAndr
 
     @Override
     public void exitFullscreenModeForTab() {
+        VideoAssistantController.hideForTab(mTab);
         mDelegate.exitFullscreenModeForTab();
     }
 

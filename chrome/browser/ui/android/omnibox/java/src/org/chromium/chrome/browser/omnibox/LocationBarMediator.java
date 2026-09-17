@@ -1326,10 +1326,10 @@ class LocationBarMediator
     @Override
     public void loadUrlFromVoice(String url) {
         if (url.startsWith("kiwi://")) {
-          url = UrlBarData.replaceOnce(url, "kiwi://", "chrome://");
+          url = url.replaceFirst("kiwi://", "chrome://");
         }
         if (url.startsWith("kiwi-extension://")) {
-          url = UrlBarData.replaceOnce(url, "kiwi-extension://", "chrome-extension://");
+          url = url.replaceFirst("kiwi-extension://", "chrome-extension://");
         }
         loadUrl(url, PageTransition.TYPED, 0);
     }

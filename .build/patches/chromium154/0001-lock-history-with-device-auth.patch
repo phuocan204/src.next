@@ -1,0 +1,93 @@
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/history/HistoryActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/history/HistoryActivity.java
+index 243fef40f5f4a..ed938acd7d94b 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/history/HistoryActivity.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/history/HistoryActivity.java
+@@ -9,7 +9,8 @@ import static org.chromium.build.NullUtil.assertNonNull;
+ import android.content.Intent;
+ import android.view.LayoutInflater;
+ import android.view.View;
+ import android.view.ViewGroup;
++import android.view.WindowManager;
+ 
+ import org.chromium.base.IntentUtils;
+ import org.chromium.base.supplier.SupplierUtils;
+@@ -18,6 +19,9 @@ import org.chromium.chrome.R;
+ import org.chromium.chrome.browser.IntentHandler;
+ import org.chromium.chrome.browser.SnackbarActivity;
+ import org.chromium.chrome.browser.back_press.BackPressHelper;
++import org.chromium.chrome.browser.device_reauth.BiometricStatus;
++import org.chromium.chrome.browser.device_reauth.DeviceAuthSource;
++import org.chromium.chrome.browser.device_reauth.ReauthenticatorBridge;
+ import org.chromium.chrome.browser.flags.ChromeFeatureList;
+ import org.chromium.chrome.browser.profiles.Profile;
+ import org.chromium.chrome.browser.ui.edge_to_edge.EdgeToEdgeControllerFactory;
+@@ -37,10 +41,32 @@ public class HistoryActivity extends SnackbarActivity {
+     private @Nullable HistoryManager mHistoryManager;
+     private @Nullable ManagedBottomSheetController mBottomSheetController;
++    private @Nullable ReauthenticatorBridge mReauthenticatorBridge;
+ 
+     @Override
+     protected void onProfileAvailable(Profile profile) {
+         super.onProfileAvailable(profile);
+ 
++        // Browsing history is sensitive. Require the same device credential used to unlock
++        // Android (biometrics, PIN, pattern, or password) before creating any history UI.
++        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
++        mReauthenticatorBridge =
++                ReauthenticatorBridge.create(this, profile, DeviceAuthSource.HISTORY);
++        if (mReauthenticatorBridge.getBiometricAvailabilityStatus()
++                == BiometricStatus.UNAVAILABLE) {
++            finish();
++            return;
++        }
++        mReauthenticatorBridge.reauthenticate(
++                authenticationSucceeded -> {
++                    if (!authenticationSucceeded || isFinishing() || isDestroyed()) {
++                        finish();
++                        return;
++                    }
++                    showHistory(profile);
++                });
++    }
++
++    private void showHistory(Profile profile) {
+         boolean appSpecificHistory =
+                 getIntent().getBooleanExtra(IntentHandler.EXTRA_APP_SPECIFIC_HISTORY, false);
+         // For now, we only hide the clear data button for app specific history.
+@@ -126,6 +152,10 @@ public class HistoryActivity extends SnackbarActivity {
+             mHistoryManager.onDestroyed();
+             mHistoryManager = null;
+         }
++        if (mReauthenticatorBridge != null) {
++            mReauthenticatorBridge.destroy();
++            mReauthenticatorBridge = null;
++        }
+         super.onDestroy();
+     }
+ 
+diff --git a/components/device_reauth/device_reauth_metrics_util.h b/components/device_reauth/device_reauth_metrics_util.h
+index b35e3c03bd024..a17c4a1c6258a 100644
+--- a/components/device_reauth/device_reauth_metrics_util.h
++++ b/components/device_reauth/device_reauth_metrics_util.h
+@@ -20,7 +20,8 @@ enum class DeviceAuthSource {
+   kSettingsBatchUpload = 4,
+   kBookmarkBatchUpload = 5,
+   kPasswordsCsvDownload = 6,
+-  kMaxValue = kPasswordsCsvDownload
++  kHistory = 7,
++  kMaxValue = kHistory
+ };
+ 
+ // The result of the device reauthentication attempt.
+diff --git a/tools/metrics/histograms/metadata/android/enums.xml b/tools/metrics/histograms/metadata/android/enums.xml
+index adbe93ac15f4c..311717017c03d 100644
+--- a/tools/metrics/histograms/metadata/android/enums.xml
++++ b/tools/metrics/histograms/metadata/android/enums.xml
+@@ -1219,6 +1219,7 @@ chromium-metrics-reviews@google.com.
+   <int value="4" label="Settings Batch Upload"/>
+   <int value="5" label="Bookmark Batch Upload"/>
+   <int value="6" label="Passwords CSV Download"/>
++  <int value="7" label="Browsing History"/>
+ </enum>
+ 
+ <enum name="DeviceLockDialogAction">

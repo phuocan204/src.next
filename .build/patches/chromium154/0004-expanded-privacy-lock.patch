@@ -1,0 +1,152 @@
+diff --git a/chrome/android/java/res/xml/privacy_preferences.xml b/chrome/android/java/res/xml/privacy_preferences.xml
+--- a/chrome/android/java/res/xml/privacy_preferences.xml
++++ b/chrome/android/java/res/xml/privacy_preferences.xml
+@@ -43,6 +43,18 @@ Use of this source code is governed by a BSD-style license that can be
+         android:summary="@string/settings_incognito_tab_lock_summary_android_setting_off"
+         android:persistent="false" />
+ 
++    <org.chromium.components.browser_ui.settings.ChromeBasePreferenceCategory
++        android:key="kiwi_privacy_lock_section"
++        android:title="@string/privacy_section_title" />
++    <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
++        android:key="privacy_lock_bookmarks"
++        android:title="@string/menu_bookmarks"
++        android:defaultValue="false" />
++    <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
++        android:key="privacy_lock_downloads"
++        android:title="@string/menu_downloads"
++        android:defaultValue="false" />
++
+     <org.chromium.components.browser_ui.settings.ChromeBasePreferenceCategory
+         android:key="security_section"
+       android:title="@string/security_section_title" />
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/bookmarks/BookmarkActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/app/bookmarks/BookmarkActivity.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/app/bookmarks/BookmarkActivity.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/app/bookmarks/BookmarkActivity.java
+@@ -23,3 +23,5 @@ import org.chromium.chrome.browser.bookmarks.BookmarkPage;
+ import org.chromium.chrome.browser.bookmarks.BookmarkUiPrefs;
++import org.chromium.chrome.browser.device_reauth.DeviceAuthSource;
+ import org.chromium.chrome.browser.flags.ChromeFeatureList;
++import org.chromium.chrome.browser.privacy.settings.SensitiveActivityReauthenticator;
+ import org.chromium.chrome.browser.preferences.ChromeSharedPreferences;
+@@ -62,4 +64,14 @@ public class BookmarkActivity extends SnackbarActivity {
+     @Override
+     protected void onProfileAvailable(Profile profile) {
+         super.onProfileAvailable(profile);
++        SensitiveActivityReauthenticator.authenticate(
++                this,
++                profile,
++                SensitiveActivityReauthenticator.PREF_LOCK_BOOKMARKS,
++                DeviceAuthSource.BOOKMARKS,
++                () -> initializeBookmarkUi(profile));
++    }
++
++    private void initializeBookmarkUi(Profile profile) {
++        if (isFinishing() || isDestroyed()) return;
+         setContentView(R.layout.bookmark_activity);
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/download/home/DownloadActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/app/download/home/DownloadActivity.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/app/download/home/DownloadActivity.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/app/download/home/DownloadActivity.java
+@@ -13,6 +13,8 @@ import org.chromium.chrome.browser.SnackbarActivity;
+ import org.chromium.chrome.browser.back_press.BackPressHelper;
++import org.chromium.chrome.browser.device_reauth.DeviceAuthSource;
+ import org.chromium.chrome.browser.download.DownloadUtils;
+ import org.chromium.chrome.browser.download.home.DownloadManagerCoordinator;
+ import org.chromium.chrome.browser.download.home.DownloadManagerUiConfig;
+ import org.chromium.chrome.browser.download.home.DownloadManagerUiConfigHelper;
++import org.chromium.chrome.browser.privacy.settings.SensitiveActivityReauthenticator;
+ import org.chromium.chrome.browser.download.items.OfflineContentAggregatorNotificationBridgeUiFactory;
+@@ -64,4 +66,14 @@ public class DownloadActivity extends SnackbarActivity implements ModalDialogMa
+     protected void onProfileAvailable(Profile profile) {
+         super.onProfileAvailable(profile);
++        SensitiveActivityReauthenticator.authenticate(
++                this,
++                profile,
++                SensitiveActivityReauthenticator.PREF_LOCK_DOWNLOADS,
++                DeviceAuthSource.DOWNLOADS,
++                () -> initializeDownloadUi(profile));
++    }
++
++    private void initializeDownloadUi(Profile profile) {
++        if (isFinishing() || isDestroyed()) return;
+ 
+         // TODO(crbug.com/40254448): Update DownloadActivity to use ProfileIntentUtils instead of
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/SensitiveActivityReauthenticator.java b/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/SensitiveActivityReauthenticator.java
+new file mode 100644
+--- /dev/null
++++ b/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/SensitiveActivityReauthenticator.java
+@@ -0,0 +1,54 @@
++// Copyright 2026 The Chromium Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++package org.chromium.chrome.browser.privacy.settings;
++
++import android.app.Activity;
++import android.view.WindowManager;
++
++import org.chromium.build.annotations.NullMarked;
++import org.chromium.chrome.browser.device_reauth.BiometricStatus;
++import org.chromium.chrome.browser.device_reauth.DeviceAuthSource;
++import org.chromium.chrome.browser.device_reauth.ReauthenticatorBridge;
++import org.chromium.chrome.browser.preferences.ChromeSharedPreferences;
++import org.chromium.chrome.browser.profiles.Profile;
++
++/** Gates creation of sensitive standalone browser UIs behind the device screen lock. */
++@NullMarked
++public final class SensitiveActivityReauthenticator {
++    public static final String PREF_LOCK_BOOKMARKS = "privacy_lock_bookmarks";
++    public static final String PREF_LOCK_DOWNLOADS = "privacy_lock_downloads";
++
++    private SensitiveActivityReauthenticator() {}
++
++    public static void authenticate(
++            Activity activity,
++            Profile profile,
++            String preferenceKey,
++            @DeviceAuthSource int source,
++            Runnable onSuccess) {
++        if (!ChromeSharedPreferences.getInstance().readBoolean(preferenceKey, false)) {
++            onSuccess.run();
++            return;
++        }
++
++        activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
++        ReauthenticatorBridge bridge = ReauthenticatorBridge.create(activity, profile, source);
++        if (bridge.getBiometricAvailabilityStatus() == BiometricStatus.UNAVAILABLE) {
++            bridge.destroy();
++            activity.finish();
++            return;
++        }
++
++        bridge.reauthenticate(
++                success -> {
++                    bridge.destroy();
++                    if (success && !activity.isFinishing() && !activity.isDestroyed()) {
++                        onSuccess.run();
++                    } else {
++                        activity.finish();
++                    }
++                });
++    }
++}
+diff --git a/components/device_reauth/device_reauth_metrics_util.h b/components/device_reauth/device_reauth_metrics_util.h
+--- a/components/device_reauth/device_reauth_metrics_util.h
++++ b/components/device_reauth/device_reauth_metrics_util.h
+@@ -24,4 +24,6 @@ enum class DeviceAuthSource {
+   kPasswordsCsvDownload = 6,
+   kHistory = 7,
+-  kMaxValue = kHistory
++  kBookmarks = 8,
++  kDownloads = 9,
++  kMaxValue = kDownloads
+ };
+diff --git a/tools/metrics/histograms/metadata/android/enums.xml b/tools/metrics/histograms/metadata/android/enums.xml
+--- a/tools/metrics/histograms/metadata/android/enums.xml
++++ b/tools/metrics/histograms/metadata/android/enums.xml
+@@ -1218,3 +1218,5 @@
+   <int value="6" label="Passwords CSV Download"/>
+   <int value="7" label="Browsing History"/>
++  <int value="8" label="Bookmarks"/>
++  <int value="9" label="Downloads"/>
+ </enum>

@@ -1,0 +1,110 @@
+name: Build Chromium 154 ARM64 APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      jobs:
+        description: Parallel Ninja jobs (reduce this if the runner runs out of memory)
+        required: true
+        default: "5"
+        type: choice
+        options:
+          - "3"
+          - "5"
+          - "6"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chromium154-arm64-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    env:
+      CHROMIUM_REVISION: 0fa6d91e2faf313da8332688a96bd98b9d983a4d
+      OVERLAY_ROOT: ${{ github.workspace }}
+      JOBS: ${{ inputs.jobs }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+    steps:
+      - name: Reclaim runner disk for Chromium
+        uses: easimon/maximize-build-space@v10
+        with:
+          root-reserve-mb: 2048
+          swap-size-mb: 4096
+          remove-dotnet: "true"
+          remove-android: "true"
+          remove-haskell: "true"
+          remove-codeql: "true"
+          remove-docker-images: "true"
+
+      - name: Check out Kiwi source
+        uses: actions/checkout@v4
+
+      - name: Notify Discord - build started
+        if: ${{ env.DISCORD_WEBHOOK_URL != '' }}
+        env:
+          DISCORD_MESSAGE: "🚀 Kiwi Chromium 154 ARM64 build #${{ github.run_number }} started: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: bash .build/notify_discord.sh
+
+      - name: Configure build paths
+        shell: bash
+        run: |
+          build_cache="$(dirname "${GITHUB_WORKSPACE}")/_kiwi_cache"
+          echo "CHROMIUM_ROOT=${build_cache}/chromium154/src" >> "${GITHUB_ENV}"
+          echo "DEPOT_TOOLS=${build_cache}/depot_tools" >> "${GITHUB_ENV}"
+
+      - name: Check runner capacity
+        shell: bash
+        run: |
+          set -euo pipefail
+          available_gb=$(df --output=avail -BG "${GITHUB_WORKSPACE}" | tail -1 | tr -dc '0-9')
+          echo "Available build disk: ${available_gb} GB"
+          if (( available_gb < 70 )); then
+            echo "At least 70 GB of free disk is required after runner cleanup." >&2
+            exit 1
+          fi
+          df -h "${GITHUB_WORKSPACE}"
+          free -h
+
+      - name: Notify Discord - preparing Chromium
+        if: ${{ env.DISCORD_WEBHOOK_URL != '' }}
+        env:
+          DISCORD_MESSAGE: "📦 Build #${{ github.run_number }}: downloading and preparing Chromium 154 source."
+        run: bash .build/notify_discord.sh
+
+      - name: Prepare Chromium checkout
+        shell: bash
+        run: bash .build/prepare_chromium154_ci.sh
+
+      - name: Notify Discord - compiling APK
+        if: ${{ env.DISCORD_WEBHOOK_URL != '' }}
+        env:
+          DISCORD_MESSAGE: "🛠️ Build #${{ github.run_number }}: source is ready; compiling the ARM64 APK with ${{ inputs.jobs }} jobs."
+        run: bash .build/notify_discord.sh
+
+      - name: Build ARM64 APK
+        shell: bash
+        run: bash .build/build_chromium154_apk.sh
+
+      - name: Upload APK and build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kiwi-chromium154-arm64-${{ github.run_number }}
+          path: |
+            release-apk/chromium154/*.apk
+            release-apk/chromium154/build.log
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Notify Discord - final status
+        if: ${{ always() && env.DISCORD_WEBHOOK_URL != '' }}
+        env:
+          DISCORD_MESSAGE: "${{ job.status == 'success' && '✅' || '❌' }} Build #${{ github.run_number }} finished with status `${{ job.status }}`: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: bash .build/notify_discord.sh

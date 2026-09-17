@@ -164,6 +164,7 @@
 #include "chrome/browser/ssl/chrome_security_state_client.h"
 #include "chrome/browser/webauthn/android/chrome_webauthn_client_android.h"
 #include "components/webauthn/android/webauthn_client_android.h"
+#else
 #include "chrome/browser/devtools/devtools_auto_opener.h"
 #include "chrome/browser/gcm/gcm_product_util.h"
 #include "chrome/browser/hid/hid_policy_allowed_devices.h"
@@ -330,7 +331,7 @@ void BrowserProcessImpl::Init() {
   // Make sure webapps client has been set.
   webapps::ChromeWebappsClient::GetInstance();
 
-#if !BUILDFLAG(IS_ANDROID) || true
+#if !BUILDFLAG(IS_ANDROID)
   KeepAliveRegistry::GetInstance()->SetIsShuttingDown(false);
   KeepAliveRegistry::GetInstance()->AddObserver(this);
 #endif  // !BUILDFLAG(IS_ANDROID)
@@ -386,7 +387,7 @@ BrowserProcessImpl::~BrowserProcessImpl() {
   extensions::AppWindowClient::Set(nullptr);
 #endif
 
-#if !BUILDFLAG(IS_ANDROID) || true
+#if !BUILDFLAG(IS_ANDROID)
   KeepAliveRegistry::GetInstance()->RemoveObserver(this);
 #endif
 
@@ -853,7 +854,7 @@ printing::BackgroundPrintingManager*
 #endif
 }
 
-#if !BUILDFLAG(IS_ANDROID) || true
+#if !BUILDFLAG(IS_ANDROID)
 IntranetRedirectDetector* BrowserProcessImpl::intranet_redirect_detector() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (!intranet_redirect_detector_)
@@ -936,7 +937,7 @@ BrowserProcessImpl::resource_coordinator_parts() {
   return resource_coordinator_parts_.get();
 }
 
-#if !BUILDFLAG(IS_ANDROID) || true
+#if !BUILDFLAG(IS_ANDROID)
 SerialPolicyAllowedPorts* BrowserProcessImpl::serial_policy_allowed_ports() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (!serial_policy_allowed_ports_) {
@@ -1378,7 +1379,7 @@ void BrowserProcessImpl::Unpin() {
   DCHECK(!shutting_down_);
   shutting_down_ = true;
 
-#if !BUILDFLAG(IS_ANDROID) || true
+#if !BUILDFLAG(IS_ANDROID)
   KeepAliveRegistry::GetInstance()->SetIsShuttingDown();
 #endif  // !BUILDFLAG(IS_ANDROID)
 

@@ -29,6 +29,18 @@
         android:title="@string/settings_incognito_tab_lock_title"
         android:summary="@string/settings_incognito_tab_lock_summary_android_setting_off"
         android:persistent="false"/>
+    <PreferenceCategory android:title="@string/privacy_lock_category">
+        <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
+            android:key="privacy_lock_bookmarks"
+            android:title="@string/privacy_lock_bookmarks_title"
+            android:summary="@string/privacy_lock_bookmarks_summary"
+            android:defaultValue="false"/>
+        <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
+            android:key="privacy_lock_downloads"
+            android:title="@string/privacy_lock_downloads_title"
+            android:summary="@string/privacy_lock_downloads_summary"
+            android:defaultValue="false"/>
+    </PreferenceCategory>
     <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
         android:key="can_make_payment"
         android:title="@string/can_make_payment_title"

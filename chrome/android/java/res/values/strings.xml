@@ -15,6 +15,18 @@
     <string name="main_menu_translate">Translate</string>
     <string name="main_menu_translate_undo">Stop translate</string>
 
+    <string name="history_auth_title">Unlock browsing history</string>
+    <string name="history_auth_subtitle">Use your fingerprint, PIN, pattern, or password to continue</string>
+    <string name="history_auth_use_screen_lock">Use PIN or screen lock</string>
+    <string name="history_auth_screen_lock_required">Set a screen lock before opening browsing history</string>
+    <string name="privacy_lock_category">Privacy lock</string>
+    <string name="privacy_lock_bookmarks_title">Lock bookmarks</string>
+    <string name="privacy_lock_bookmarks_summary">Require your device fingerprint, PIN, pattern, or password</string>
+    <string name="privacy_lock_downloads_title">Lock downloads</string>
+    <string name="privacy_lock_downloads_summary">Require your device fingerprint, PIN, pattern, or password</string>
+    <string name="video_assistant_title">Fullscreen video assistant</string>
+    <string name="video_assistant_summary">Show gesture controls for brightness, volume, seeking, playback speed, screen fit, and picture-in-picture</string>
+
     <string name="main_menu_turn_on_night_mode">Turn on night mode</string>
     <string name="main_menu_turn_off_night_mode">Turn off night mode</string>
 

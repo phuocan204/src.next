@@ -30,7 +30,7 @@
 #include "ui/gfx/geometry/rect.h"
 #include "url/gurl.h"
 
-#if !BUILDFLAG(IS_ANDROID) || true
+#if !BUILDFLAG(IS_ANDROID)
 #include "chrome/browser/ui/tabs/tab_strip_model.h"
 #include "components/tab_groups/tab_group_id.h"
 #endif
@@ -68,7 +68,7 @@ struct OpenURLParams;
 
 // TODO(thestig): Split or ifdef out more fields that are not used on Android.
 struct NavigateParams {
-#if 0
+#if BUILDFLAG(IS_ANDROID)
   explicit NavigateParams(
       std::unique_ptr<content::WebContents> contents_to_insert);
 #else
@@ -240,7 +240,7 @@ struct NavigateParams {
   };
   PathBehavior path_behavior = RESPECT;
 
-#if !BUILDFLAG(IS_ANDROID) || true
+#if !BUILDFLAG(IS_ANDROID)
   // [in]  Specifies a Browser object where the navigation could occur or the
   //       tab could be added. Navigate() is not obliged to use this Browser if
   //       it is not compatible with the operation being performed. This can be

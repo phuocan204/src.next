@@ -673,6 +673,11 @@ by a child template that "extends" this file.
             android:exported="false"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|mcc|mnc|screenLayout|smallestScreenSize">
         </activity>
+        <activity android:name="org.chromium.chrome.browser.history.HistoryAuthenticationActivity"
+            android:theme="@style/Theme.Chromium.Activity.Fullscreen.Transparent"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize" />
 
         <!-- Activities for app launcher. -->
         <activity android:name="org.chromium.chrome.browser.webapps.launchpad.LaunchpadActivity"

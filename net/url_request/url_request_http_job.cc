@@ -722,7 +722,6 @@ void URLRequestHttpJob::SetCookieHeaderAndStart(
       std::string cookie_line =
           CanonicalCookie::BuildCookieLine(maybe_included_cookies);
       if (request_info_.url.host().find("news.google.com") != std::string::npos) {
-         cookie_line = CanonicalCookie::BuildCookieLineWithoutConsent(maybe_included_cookies);
          if (!cookie_line.empty())
            cookie_line += "; ";
          base::Time time = base::Time::Now();

@@ -64,6 +64,7 @@ import org.chromium.chrome.browser.findinpage.FindToolbarObserver;
 import org.chromium.chrome.browser.flags.ChromeFeatureList;
 import org.chromium.chrome.browser.fullscreen.FullscreenManager;
 import org.chromium.chrome.browser.fullscreen.FullscreenOptions;
+import org.chromium.chrome.browser.history.HistoryAccessAuthenticator;
 import org.chromium.chrome.browser.history.HistoryManagerUtils;
 import org.chromium.chrome.browser.homepage.HomepageManager;
 import org.chromium.chrome.browser.homepage.HomepagePolicyManager;
@@ -1047,7 +1048,10 @@ public class ToolbarManager implements UrlFocusChangeListener, ThemeColorObserve
                 mIsProgressBarVisibleSupplier, IncognitoUtils::isIncognitoModeEnabled,
                 isGridTabSwitcherEnabled, isTabletGtsPolishEnabled, isTabToGtsAnimationEnabled,
                 isStartSurfaceEnabled, isTabGroupsAndroidContinuationEnabled,
-                HistoryManagerUtils::showHistoryManager,
+                (activity, tab, isIncognitoSelected) ->
+                        HistoryAccessAuthenticator.authenticate(activity,
+                                () -> HistoryManagerUtils.showHistoryManager(
+                                        activity, tab, isIncognitoSelected)),
                 PartnerBrowserCustomizations.getInstance()::isHomepageProviderAvailableAndEnabled,
                 DownloadUtils::downloadOfflinePage, initializeWithIncognitoColors, profileSupplier,
                 logoClickedCallback);

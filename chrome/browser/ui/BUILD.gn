@@ -708,7 +708,17 @@ static_library("ui") {
   }
 
   if (is_android) {
+    sources -= [
+      "webui/apc_internals/apc_internals_handler.cc",
+      "webui/apc_internals/apc_internals_handler.h",
+      "webui/apc_internals/apc_internals_logins_request.cc",
+      "webui/apc_internals/apc_internals_logins_request.h",
+      "webui/apc_internals/apc_internals_ui.cc",
+      "webui/apc_internals/apc_internals_ui.h",
+    ]
+
     sources += [
+      "webui/apc_internals/apc_internals_ui_android.cc",
       "android/android_about_app_info.cc",
       "android/android_about_app_info.h",
       "android/autofill/authenticator_selection_dialog_view_android.cc",

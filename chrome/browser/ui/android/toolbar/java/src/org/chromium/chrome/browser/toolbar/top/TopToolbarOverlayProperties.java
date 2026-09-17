@@ -28,6 +28,9 @@ public class TopToolbarOverlayProperties {
     public static final WritableIntPropertyKey URL_BAR_COLOR = new WritableIntPropertyKey();
 
     /** The current offset of the top toolbar. */
+    public static final WritableFloatPropertyKey X_OFFSET = new WritableFloatPropertyKey();
+
+    /** The current vertical offset of the top toolbar. */
     public static final WritableFloatPropertyKey Y_OFFSET = new WritableFloatPropertyKey();
 
     /** Whether the shadow under the toolbar should be visible. */
@@ -36,11 +39,15 @@ public class TopToolbarOverlayProperties {
     /** Whether the layer should be visible. */
     public static final WritableBooleanPropertyKey VISIBLE = new WritableBooleanPropertyKey();
 
+    /** Whether toolbar contents should be anonymized in the compositor. */
+    public static final WritableBooleanPropertyKey ANONYMIZE = new WritableBooleanPropertyKey();
+
     /** A "struct" for progress bar drawing info. */
     public static final WritableObjectPropertyKey<DrawingInfo> PROGRESS_BAR_INFO =
             new WritableObjectPropertyKey<>(true);
 
     public static final PropertyKey[] ALL_KEYS =
             new PropertyKey[] {RESOURCE_ID, URL_BAR_RESOURCE_ID, TOOLBAR_BACKGROUND_COLOR,
-                    URL_BAR_COLOR, Y_OFFSET, SHOW_SHADOW, VISIBLE, PROGRESS_BAR_INFO};
+                    URL_BAR_COLOR, X_OFFSET, Y_OFFSET, SHOW_SHADOW, VISIBLE, ANONYMIZE,
+                    PROGRESS_BAR_INFO};
 }

@@ -21,7 +21,7 @@ using content::GlobalRequestID;
 using content::NavigationController;
 using content::WebContents;
 
-#if 0
+#if BUILDFLAG(IS_ANDROID)
 NavigateParams::NavigateParams(std::unique_ptr<WebContents> contents_to_insert)
     : contents_to_insert(std::move(contents_to_insert)) {}
 #else

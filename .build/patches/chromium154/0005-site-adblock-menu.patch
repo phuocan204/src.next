@@ -1,0 +1,146 @@
+diff --git a/chrome/android/java/res/values/ids.xml b/chrome/android/java/res/values/ids.xml
+index 357c376337046..a40cbfffe9df8 100644
+--- a/chrome/android/java/res/values/ids.xml
++++ b/chrome/android/java/res/values/ids.xml
+@@ -175,6 +175,7 @@ found in the LICENSE file.
+     <item type="id" name="add_to_new_group_sub_menu_id" />
+     <item type="id" name="add_to_reading_list_menu_id" />
+     <item type="id" name="addresses_and_more_menu_id" />
++    <item type="id" name="adblock_id" />
+     <item type="id" name="ai_pdf_menu_id" />
+     <item type="id" name="ai_web_menu_id" />
+     <item type="id" name="all_bookmarks_menu_id" />
+diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+index f31df87ff47a8..780489b79db68 100644
+--- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
++++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+@@ -2702,6 +2702,13 @@ Your browsing history, cookies, site data, and information entered in forms will
+         Translate…
+       </message>
+ 
++      <message name="IDS_MENU_BLOCK_ADS_ON_SITE" desc="Menu item for blocking intrusive ads on the current site. [CHAR_LIMIT=32]">
++        Block ads on this site
++      </message>
++      <message name="IDS_MENU_ALLOW_ADS_ON_SITE" desc="Menu item for allowing ads on the current site. [CHAR_LIMIT=32]">
++        Allow ads on this site
++      </message>
++
+       <message name="IDS_MENU_LISTEN_TO_THIS_PAGE" desc="Menu item for making the browser read out the page's text in spoken audio form. [CHAR_LIMIT=27]">
+         Listen to this page
+       </message>
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java b/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java
+index e673d0ff6c8e7..d5d9a34e85f45 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java
+@@ -69,3 +69,6 @@ import org.chromium.components.browser_ui.bottomsheet.BottomSheetController;
+ import org.chromium.components.browser_ui.bottomsheet.BottomSheetControllerProvider;
++import org.chromium.components.browser_ui.site_settings.WebsitePreferenceBridge;
+ import org.chromium.components.commerce.core.CommerceFeatureUtils;
++import org.chromium.components.content_settings.ContentSetting;
++import org.chromium.components.content_settings.ContentSettingsType;
+ import org.chromium.components.commerce.core.CommerceSubscription;
+@@ -406,6 +409,36 @@ public class AppMenuPropertiesDelegateImpl implements AppMenuPropertiesDelegate
+                         isMenuIconAtStart()));
+     }
+ 
++    /** Return whether per-site intrusive-ad controls apply to the current tab. */
++    protected boolean shouldShowAdBlockMenuItem(@Nullable Tab currentTab) {
++        return currentTab != null
++                && shouldShowWebContentsDependentMenuItem(currentTab)
++                && UrlUtilities.isHttpOrHttps(currentTab.getUrl());
++    }
++
++    /** Construct the per-site intrusive-ad toggle for the given tab. */
++    protected ListItem buildAdBlockMenuItem(Tab currentTab, boolean showIcon) {
++        assert shouldShowAdBlockMenuItem(currentTab);
++        String origin = currentTab.getUrl().getOrigin().getSpec();
++        @ContentSetting
++        int setting =
++                WebsitePreferenceBridge.getContentSettingWithEmbargo(
++                        currentTab.getProfile(), ContentSettingsType.ADS, origin, origin);
++        int title =
++                setting == ContentSetting.BLOCK
++                        ? R.string.menu_allow_ads_on_site
++                        : R.string.menu_block_ads_on_site;
++        return new MVCListAdapter.ListItem(
++                AppMenuHandler.AppMenuItemType.STANDARD,
++                AppMenuItemUtils.buildModelForStandardMenuItem(
++                        mContext,
++                        mAppMenuItemTheme,
++                        R.id.adblock_id,
++                        title,
++                        0,
++                        isMenuIconAtStart()));
++    }
++
+     /** Return whether the current tab should show the "Open with..." item. */
+     @Contract("null -> false")
+     protected boolean shouldShowOpenWithItem(@Nullable Tab currentTab) {
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tabbed_mode/TabbedAppMenuPropertiesDelegate.java b/chrome/android/java/src/org/chromium/chrome/browser/tabbed_mode/TabbedAppMenuPropertiesDelegate.java
+index a352e62498119..14300edb9a641 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/tabbed_mode/TabbedAppMenuPropertiesDelegate.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/tabbed_mode/TabbedAppMenuPropertiesDelegate.java
+@@ -489,5 +489,10 @@ public class TabbedAppMenuPropertiesDelegate extends AppMenuPropertiesDelegateIm
+             modelList.add(buildTranslateMenuItem(currentTab, shouldShowIconBeforeItem));
+         }
+ 
++        // Per-site intrusive-ad control.
++        if (shouldShowAdBlockMenuItem(currentTab)) {
++            modelList.add(buildAdBlockMenuItem(currentTab, shouldShowIconBeforeItem));
++        }
++
+         // Readaloud
+         if (!isSubmenusEnabled(mContext)) {
+@@ -698,5 +703,10 @@ public class TabbedAppMenuPropertiesDelegate extends AppMenuPropertiesDelegateIm
+             modelList.add(buildTranslateMenuItem(currentTab, shouldShowIconBeforeItem));
+         }
+ 
++        // Per-site intrusive-ad control.
++        if (shouldShowAdBlockMenuItem(currentTab)) {
++            modelList.add(buildAdBlockMenuItem(currentTab, shouldShowIconBeforeItem));
++        }
++
+         // More tools
+         if (mMoreToolsItemBuilder.shouldShowMoreToolsItem(currentTab)) {
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java
+index 46e9d3b686276..cfd61bc80334e 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java
+@@ -243,4 +243,7 @@ import org.chromium.chrome.browser.webapps.AppInstallMenuHandler;
+ import org.chromium.components.bookmarks.BookmarkId;
+ import org.chromium.components.browser_ui.modaldialog.AppModalPresenter;
++import org.chromium.components.browser_ui.site_settings.WebsitePreferenceBridge;
+ import org.chromium.components.browser_ui.settings.SettingsNavigation;
++import org.chromium.components.content_settings.ContentSetting;
++import org.chromium.components.content_settings.ContentSettingsType;
+ import org.chromium.components.browser_ui.util.motion.MotionEventInfo;
+@@ -3194,6 +3197,29 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
+             return true;
+         }
+ 
++        if (id == R.id.adblock_id) {
++            GURL url = currentTab.getUrl();
++            if (!UrlUtilities.isHttpOrHttps(url)) return false;
++            String origin = url.getOrigin().getSpec();
++            @ContentSetting
++            int currentSetting =
++                    WebsitePreferenceBridge.getContentSettingWithEmbargo(
++                            currentTab.getProfile(), ContentSettingsType.ADS, origin, origin);
++            @ContentSetting
++            int newSetting =
++                    currentSetting == ContentSetting.BLOCK
++                            ? ContentSetting.ALLOW
++                            : ContentSetting.BLOCK;
++            WebsitePreferenceBridge.setPermissionSettingForOrigin(
++                    currentTab.getProfile(), ContentSettingsType.ADS, origin, origin, newSetting);
++            RecordUserAction.record(
++                    newSetting == ContentSetting.BLOCK
++                            ? "MobileMenuKiwiBlockAdsForSite"
++                            : "MobileMenuKiwiAllowAdsForSite");
++            currentTab.reload();
++            return true;
++        }
++
+         if (id == R.id.readaloud_menu_id) {
+             RecordUserAction.record("MobileMenuReadAloud");
+             doReadCurrentTabAloud(currentTab);

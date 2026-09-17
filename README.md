@@ -44,3 +44,14 @@ If you really need Kiwi Browser, you can download the [latest published version 
 While your Kiwi Browser installation will still work for some time, it’s essential to explore alternatives like [Microsoft Edge Canary](https://play.google.com/store/apps/details?id=com.microsoft.emmx.canary), [Vivaldi Browser](https://play.google.com/store/apps/details?id=com.vivaldi.browser) or [Mozilla Firefox](https://play.google.com/store/apps/details?id=org.mozilla.firefox) to stay secure and up-to-date.
 
 -- Arnaud.
+
+## Building the Chromium 154 ARM64 APK
+
+The repository includes a manually triggered GitHub Actions workflow at
+`.github/workflows/build_chromium154_arm64.yml`. It runs on GitHub-hosted Linux,
+reclaims the runner's unused SDK partitions for the large Chromium checkout,
+and builds the ARM64 APK within GitHub's six-hour job limit.
+
+After registering the runner, open **Actions > Build Chromium 154 ARM64 APK >
+Run workflow**. A successful run publishes the APK and build log as a workflow
+artifact retained for 14 days.

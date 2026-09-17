@@ -42,6 +42,7 @@ import org.chromium.base.BundleUtils;
 import org.chromium.base.Callback;
 import org.chromium.base.CommandLine;
 import org.chromium.base.ContextUtils;
+import org.chromium.base.ApiCompatibilityUtils;
 import org.chromium.base.Log;
 import org.chromium.base.PowerMonitor;
 import org.chromium.base.StrictModeContext;
@@ -121,6 +122,7 @@ import org.chromium.chrome.browser.gsa.ContextReporter;
 import org.chromium.chrome.browser.gsa.GSAAccountChangeListener;
 import org.chromium.chrome.browser.gsa.GSAContextDisplaySelection;
 import org.chromium.chrome.browser.gsa.GSAState;
+import org.chromium.chrome.browser.history.HistoryAccessAuthenticator;
 import org.chromium.chrome.browser.history.HistoryManagerUtils;
 import org.chromium.chrome.browser.init.AsyncInitializationActivity;
 import org.chromium.chrome.browser.init.ProcessInitializationHandler;
@@ -759,13 +761,10 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
             // of our control, so we have to disable StrictMode to work. See
             // https://crbug.com/639352.
             try (StrictModeContext ignored = StrictModeContext.allowDiskWrites()) {
-                SharedPreferencesManager.getInstance().writeBooleanUnchecked("is_tablet", DeviceFormFactor.isTablet());
+                SharedPreferencesManager.getInstance().writeBoolean(
+                        "is_tablet", DeviceFormFactor.isTablet());
                 TraceEvent.begin("setContentView(R.layout.main)");
-                if (ContextUtils.getAppSharedPreferences().getBoolean("enable_bottom_toolbar", false)) {
-                    setContentView(R.layout.main_bottombar);
-                } else {
-                    setContentView(R.layout.main);
-                }
+                setContentView(R.layout.main);
                 TraceEvent.end("setContentView(R.layout.main)");
                 if (getControlContainerLayoutId() != ActivityUtils.NO_RESOURCE_ID) {
                     ViewStub toolbarContainerStub =
@@ -866,13 +865,16 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
             public void onPageLoadFinished(Tab tab, GURL url) {
                 postDeferredStartupIfNeeded();
                 OfflinePageUtils.showOfflineSnackbarIfNecessary(tab);
+                // PersonalizeResults injects JavaScript into the main frame.
+                // onUrlUpdated can run before that frame is live, causing
+                // RenderFrameHostImpl::ExecuteJavaScript to CHECK and abort.
+                PersonalizeResults.Execute(tab);
                 mRootUiCoordinator.getStatusBarColorController().updateStatusBarColor();
             }
 
             @Override
             public void onUrlUpdated(Tab tab){
               FixDevToolsWindow.Execute(tab);
-              PersonalizeResults.Execute(tab);
               mRootUiCoordinator.getStatusBarColorController().updateStatusBarColor();
             }
 
@@ -1787,6 +1789,12 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
     }
 
     @Override
+    public void setLastVisibleItemTitle(String itemTitle) {
+        // The condensed title carries Kiwi's extension id and optional action URL. Keep the
+        // visible title callback implemented for the complete AppMenuDelegate contract.
+    }
+
+    @Override
     public boolean onOptionsItemSelected(int itemId, @Nullable Bundle menuItemData) {
         mMenuItemData = menuItemData;
         if (mManualFillingComponentSupplier.hasValue()) {
@@ -2476,8 +2484,9 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
             }
             RecordUserAction.record("MobileMenuHistory");
             ReturnToChromeUtil.onHistoryOpened();
-            HistoryManagerUtils.showHistoryManager(
-                    this, currentTab, getTabModelSelector().isIncognitoSelected());
+            HistoryAccessAuthenticator.authenticate(this,
+                    () -> HistoryManagerUtils.showHistoryManager(this, currentTab,
+                            getTabModelSelector().isIncognitoSelected()));
             RecordHistogram.recordEnumeratedHistogram("Android.OpenHistoryFromMenu.PerProfileType",
                     type, BrowserProfileType.MAX_VALUE + 1);
             return true;
@@ -2760,10 +2769,6 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
             AppMenuBridge.openDevTools(currentTab.getWebContents());
         }
 
-        if (id == R.id.disable_proxy_id) {
-            AppMenuBridge.disableProxy(Profile.fromWebContents(currentTab.getWebContents()).getOriginalProfile());
-        }
-
         if (id == R.id.auto_dark_web_contents_id || id == R.id.auto_dark_web_contents_check_id) {
             // Get values needed to check/enable auto dark for the current site.
             Profile profile = getCurrentTabModel().getProfile();
@@ -2809,12 +2814,13 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
                           R.color.media_viewer_bg)));
               int currentTheme = ContextUtils.getAppSharedPreferences().getInt("ui_theme_setting", 0);
               SharedPreferencesManager.getInstance().writeBooleanSync("darken_websites_enabled", true);
-              SharedPreferencesManager.getInstance().writeIntUnchecked("previous_ui_theme_setting", currentTheme);
+              SharedPreferencesManager.getInstance().writeInt(
+                      "previous_ui_theme_setting", currentTheme);
               SharedPreferencesManager.getInstance().writeInt("ui_theme_setting", ThemeType.DARK);
             } else {
               getWindow().setBackgroundDrawable(new ColorDrawable(
                           ApiCompatibilityUtils.getColor(getResources(),
-                          R.color.resizing_background_color)));
+                          R.color.media_viewer_bg)));
               int previousTheme = ContextUtils.getAppSharedPreferences().getInt("previous_ui_theme_setting", 0);
               SharedPreferencesManager.getInstance().writeBooleanSync("darken_websites_enabled", false);
               SharedPreferencesManager.getInstance().writeInt("ui_theme_setting", previousTheme);
@@ -2832,18 +2838,6 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
                       new LoadUrlParams("chrome://extensions", PageTransition.LINK),
                       TabLaunchType.FROM_CHROME_UI, getActivityTab());
             }
-        }
-
-        if (id == R.id.clear_data_menu_id) {
-            RecordUserAction.record("ClearBrowsingDataFromMainMenu");
-            SettingsLauncher settingsLauncher = new SettingsLauncherImpl();
-            settingsLauncher.launchSettingsActivity(this, ClearBrowsingDataTabsFragment.class);
-        }
-
-        if (id == R.id.exit_id) {
-            RecordUserAction.record("MobileMenuExit");
-            getTabModelSelector().closeAllTabs();
-            ApplicationLifetime.terminate(false);
         }
 
         return false;

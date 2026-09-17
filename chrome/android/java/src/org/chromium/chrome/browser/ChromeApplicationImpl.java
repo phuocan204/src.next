@@ -24,6 +24,7 @@ import org.chromium.chrome.browser.dependency_injection.DaggerChromeAppComponent
 import org.chromium.chrome.browser.dependency_injection.ModuleFactoryOverrides;
 import org.chromium.chrome.browser.flags.ChromeFeatureList;
 import org.chromium.chrome.browser.fonts.FontPreloader;
+import org.chromium.chrome.browser.history.PrivacyLockActivityCallbacks;
 import org.chromium.chrome.browser.night_mode.SystemNightModeMonitor;
 import org.chromium.chrome.browser.profiles.ProfileResolver;
 import org.chromium.chrome.browser.vr.OnExitVrRequestListener;
@@ -60,12 +61,17 @@ public class ChromeApplicationImpl extends SplitCompatApplication.Impl {
 
         boolean migrateToDarkTheme = ContextUtils.getAppSharedPreferences().getString("active_theme", "").equals("Diamond Black");
         if (migrateToDarkTheme) {
-            SharedPreferencesManager.getInstance().writeIntUnchecked("previous_ui_theme_setting", ThemeType.DARK);
+            ContextUtils.getAppSharedPreferences()
+                    .edit()
+                    .putInt("previous_ui_theme_setting", ThemeType.DARK)
+                    .apply();
             SharedPreferencesManager.getInstance().writeInt("ui_theme_setting", ThemeType.DARK);
-            SharedPreferencesManager.getInstance().writeStringUnchecked("active_theme", "");
+            ContextUtils.getAppSharedPreferences().edit().putString("active_theme", "").apply();
         }
 
         if (SplitCompatApplication.isBrowserProcess()) {
+            getApplication().registerActivityLifecycleCallbacks(
+                    new PrivacyLockActivityCallbacks());
             FontPreloader.getInstance().load(getApplication());
 
             // Only load the native library early for bundle builds since some tests use the

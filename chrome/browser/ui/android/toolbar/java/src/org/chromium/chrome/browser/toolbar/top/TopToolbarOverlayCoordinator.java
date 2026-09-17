@@ -64,6 +64,31 @@ public class TopToolbarOverlayCoordinator implements SceneOverlay {
                 topUiThemeColorProvider, isGridTabSwitcherEnabled);
     }
 
+    /** Compatibility overload used by the legacy toolbar-swipe layout. */
+    public TopToolbarOverlayCoordinator(Context context, LayoutManager layoutManager,
+            Callback<ClipDrawableProgressBar.DrawingInfo> progressInfoCallback,
+            ObservableSupplier<Tab> tabSupplier,
+            BrowserControlsStateProvider browserControlsStateProvider,
+            Supplier<ResourceManager> resourceManagerSupplier,
+            TopUiThemeColorProvider topUiThemeColorProvider, int toolbarPosition,
+            boolean isGridTabSwitcherEnabled) {
+        this(context, layoutManager, progressInfoCallback, tabSupplier,
+                browserControlsStateProvider, resourceManagerSupplier, topUiThemeColorProvider,
+                isGridTabSwitcherEnabled);
+    }
+
+    public void setManualVisibility(boolean visible) {
+        mModel.set(TopToolbarOverlayProperties.VISIBLE, visible);
+    }
+
+    public void setXOffset(float offset) {
+        mModel.set(TopToolbarOverlayProperties.X_OFFSET, offset);
+    }
+
+    public void setAnonymize(boolean anonymize) {
+        mModel.set(TopToolbarOverlayProperties.ANONYMIZE, anonymize);
+    }
+
     /**
      * Set whether the android view corresponding with this overlay is showing.
      * @param isVisible Whether the android view is visible.

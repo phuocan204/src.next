@@ -75,14 +75,17 @@ public final class RadioButtonGroupTranslatePreference
      */
     @Override
     public void onCheckedChanged(RadioGroup group, int checkedId) {
-        String checkedTranslator = "";
+        String checkedTranslator = "Default";
 
         RadioButtonWithDescription mChoice_google_translate = (RadioButtonWithDescription) mHolder.findViewById(R.id.radio_button_google_translate);
         RadioButtonWithDescription mChoice_microsoft_translator = (RadioButtonWithDescription) mHolder.findViewById(R.id.radio_button_microsoft_translator);
         RadioButtonWithDescription mChoice_yandex_translator = (RadioButtonWithDescription) mHolder.findViewById(R.id.radio_button_yandex_translator);
         RadioButtonWithDescription mChoice_baidu_fanyi = (RadioButtonWithDescription) mHolder.findViewById(R.id.radio_button_baidu_fanyi);
 
-        if (mChoice_google_translate.isChecked()) {
+        if (checkedId == R.id.radio_button_default) {
+          checkedTranslator = "Default";
+        }
+        else if (mChoice_google_translate.isChecked()) {
           checkedTranslator = "Google";
         }
         else if (mChoice_microsoft_translator.isChecked()) {
@@ -93,8 +96,6 @@ public final class RadioButtonGroupTranslatePreference
         }
         else if (mChoice_baidu_fanyi.isChecked()) {
           checkedTranslator = "Baidu";
-        } else {
-          checkedTranslator = "";
         }
 
         SharedPreferences.Editor sharedPreferencesEditor = ContextUtils.getAppSharedPreferences().edit();
@@ -105,25 +106,27 @@ public final class RadioButtonGroupTranslatePreference
     @Override
     public void onBindViewHolder(PreferenceViewHolder holder) {
         super.onBindViewHolder(holder);
+        String activeTranslator = ContextUtils.getAppSharedPreferences().getString(
+                "active_translator", "Default");
         RadioButtonWithDescription mChoice_default = (RadioButtonWithDescription) holder.findViewById(R.id.radio_button_default);
         mChoice_default.setPrimaryText("Default (Google integrated)");
-        if (ContextUtils.getAppSharedPreferences().getString("active_translator", "Default") == "" || ContextUtils.getAppSharedPreferences().getString("active_translator", "Default") == "Default")
+        if (activeTranslator.isEmpty() || activeTranslator.equals("Default"))
            mChoice_default.setChecked(true);
         RadioButtonWithDescription mChoice_google_translate = (RadioButtonWithDescription) holder.findViewById(R.id.radio_button_google_translate);
         mChoice_google_translate.setPrimaryText("Google Translate (web)");
-        if (ContextUtils.getAppSharedPreferences().getString("active_translator", "Default") == "Google")
+        if (activeTranslator.equals("Google"))
           mChoice_google_translate.setChecked(true);
         RadioButtonWithDescription mChoice_microsoft_translator = (RadioButtonWithDescription) holder.findViewById(R.id.radio_button_microsoft_translator);
         mChoice_microsoft_translator.setPrimaryText("Microsoft Translator");
-        if (ContextUtils.getAppSharedPreferences().getString("active_translator", "Default") == "Microsoft Translator")
+        if (activeTranslator.equals("Microsoft Translator"))
           mChoice_microsoft_translator.setChecked(true);
         RadioButtonWithDescription mChoice_yandex_translator = (RadioButtonWithDescription) holder.findViewById(R.id.radio_button_yandex_translator);
         mChoice_yandex_translator.setPrimaryText("Yandex Translate");
-        if (ContextUtils.getAppSharedPreferences().getString("active_translator", "Default") == "Yandex")
+        if (activeTranslator.equals("Yandex"))
           mChoice_yandex_translator.setChecked(true);
         RadioButtonWithDescription mChoice_baidu_fanyi = (RadioButtonWithDescription) holder.findViewById(R.id.radio_button_baidu_fanyi);
         mChoice_baidu_fanyi.setPrimaryText("Baidu Fanyi");
-        if (ContextUtils.getAppSharedPreferences().getString("active_translator", "Default") == "Baidu")
+        if (activeTranslator.equals("Baidu"))
           mChoice_baidu_fanyi.setChecked(true);
 
         mGroup = (RadioButtonWithDescriptionLayout) holder.findViewById(R.id.radio_button_group);

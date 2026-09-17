@@ -52,6 +52,7 @@ import org.chromium.chrome.browser.gesturenav.BackActionDelegate;
 import org.chromium.chrome.browser.gesturenav.HistoryNavigationCoordinator;
 import org.chromium.chrome.browser.gesturenav.NavigationSheet;
 import org.chromium.chrome.browser.gesturenav.TabbedSheetDelegate;
+import org.chromium.chrome.browser.history.HistoryAccessAuthenticator;
 import org.chromium.chrome.browser.history.HistoryManagerUtils;
 import org.chromium.chrome.browser.incognito.reauth.IncognitoReauthCoordinatorFactory;
 import org.chromium.chrome.browser.incognito.reauth.IncognitoReauthManager;
@@ -425,9 +426,10 @@ public class TabbedRootUiCoordinator extends RootUiCoordinator {
                 mActivity.getWindow().getDecorView().findViewById(android.R.id.content), mActivity,
                 this::getBottomSheetController, profile);
         mNavigationSheet.setDelegate(new TabbedSheetDelegate(tab, aTab -> {
-            HistoryManagerUtils.showHistoryManager(mActivity, aTab,
-                    mTabModelSelectorSupplier.hasValue()
-                            && mTabModelSelectorSupplier.get().isIncognitoSelected());
+            HistoryAccessAuthenticator.authenticate(mActivity,
+                    () -> HistoryManagerUtils.showHistoryManager(mActivity, aTab,
+                            mTabModelSelectorSupplier.hasValue()
+                                    && mTabModelSelectorSupplier.get().isIncognitoSelected()));
         }, mActivity.getResources().getString(R.string.show_full_history)));
         if (!mNavigationSheet.startAndExpand(/* forward= */ false, /* animate=*/true)) {
             mNavigationSheet = null;

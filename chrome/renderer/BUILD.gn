@@ -380,7 +380,7 @@ static_library("renderer") {
     ]
   }
 
-  if (!is_android || is_android) {
+  if (!is_android) {
     sources += [
       "accessibility/read_anything_app_controller.cc",
       "accessibility/read_anything_app_controller.h",
@@ -406,6 +406,10 @@ static_library("renderer") {
       "net/page_auto_fetcher_helper_android.h",
       "sandbox_status_extension_android.cc",
       "sandbox_status_extension_android.h",
+      "searchbox/searchbox.cc",
+      "searchbox/searchbox.h",
+      "searchbox/searchbox_extension.cc",
+      "searchbox/searchbox_extension.h",
     ]
   }
 

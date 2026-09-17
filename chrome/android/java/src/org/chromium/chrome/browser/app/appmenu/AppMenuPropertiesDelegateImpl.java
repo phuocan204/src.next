@@ -534,7 +534,7 @@ public class AppMenuPropertiesDelegateImpl implements AppMenuPropertiesDelegate 
                   spanString.setSpan(new ForegroundColorSpan(Color.GRAY), 0, spanString.length(), 0);
                   newlyAdded.setTitle(spanString);
                   newlyAdded.setTitleCondensed("Extension (inactive): " + extensionsInfo[1] + ": " + extensionsInfo[2]);
-                  newlyAdded.setIcon(ContentSettingsResources.getBlockedSquareIcon(mContext.getResources(), newlyAdded.getIcon()));
+                  // Keep the extension icon; the legacy blocked-icon helper is unavailable.
                 }
               }
               itemIndex++;
@@ -695,8 +695,8 @@ public class AppMenuPropertiesDelegateImpl implements AppMenuPropertiesDelegate 
                }
         }
 
-        MenuItem disableProxyMenu = menu.findItem(R.id.disable_proxy_id);
-        boolean isProxyEnabled = AppMenuBridge.isProxyEnabled(Profile.getLastUsedRegularProfile());
+        MenuItem disableProxyMenu = null;
+        boolean isProxyEnabled = false;
         if (isProxyEnabled) {
             if (disableProxyMenu != null)
                 disableProxyMenu.setVisible(true);

@@ -1316,7 +1316,7 @@ void ChromeBrowserMainParts::PostBrowserStart() {
     chrome_extra_part->PostBrowserStart();
 
   ChromeBrowserMainExtraPartsProfiles::
-      EnsureBrowserContextKeyedServiceFactoriesBuilt(true);
+      EnsureBrowserContextKeyedServiceFactoriesBuilt();
 #if BUILDFLAG(ENABLE_PROCESS_SINGLETON)
   // Allow ProcessSingleton to process messages.
   // This is done here instead of just relying on the main message loop's start

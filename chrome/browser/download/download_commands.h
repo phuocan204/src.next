@@ -11,7 +11,7 @@
 #include "content/public/browser/page_navigator.h"
 #include "ui/gfx/image/image.h"
 
-#if !BUILDFLAG(IS_ANDROID) || true
+#if !BUILDFLAG(IS_ANDROID)
 class Browser;
 #endif
 
@@ -55,7 +55,7 @@ class DownloadCommands {
   void ExecuteCommand(Command command);
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_MAC) || BUILDFLAG(IS_FUCHSIA) || true
+    BUILDFLAG(IS_MAC) || BUILDFLAG(IS_FUCHSIA)
   bool IsDownloadPdf() const;
   bool CanOpenPdfInSystemViewer() const;
   Browser* GetBrowser() const;

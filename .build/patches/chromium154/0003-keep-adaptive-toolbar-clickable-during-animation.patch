@@ -1,0 +1,20 @@
+diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/optional_button/OptionalButtonView.java b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/optional_button/OptionalButtonView.java
+index 95effb0c4a236..36c666dc50e53 100644
+--- a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/optional_button/OptionalButtonView.java
++++ b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/optional_button/OptionalButtonView.java
+@@ -655,10 +655,12 @@ class OptionalButtonView extends FrameLayout implements TransitionListener {
+     public void onTransitionStart(@Nullable Transition transition) {
+         mTransitionStarted = true;
+         if (mState != State.RUNNING_ACTION_CHIP_COLLAPSE_TRANSITION
+                 && (transition == null || transition.getDuration() != 0)) {
+-            // Disable click listeners during the transitions (except action chip collapse, which
+-            // goes to the same icon/action).
+-            mButton.setOnClickListener(null);
++            // Keep short taps active while the optional button animates. Disabling the click
++            // listener here creates a 225-300 ms window where a visible toolbar shortcut silently
++            // ignores the user's tap. mClickListener already points at the current ButtonSpec, so
++            // dispatching it remains safe. Long presses stay disabled until the transition ends
++            // because their contextual action may depend on the final button presentation.
+             mButton.setOnLongClickListener(null);
+             mButton.setContentDescription(null);
+         }

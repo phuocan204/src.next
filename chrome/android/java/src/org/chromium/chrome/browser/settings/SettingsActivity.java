@@ -38,6 +38,7 @@ import org.chromium.chrome.browser.accessibility.settings.ChromeAccessibilitySet
 import org.chromium.chrome.browser.browsing_data.ClearBrowsingDataFragmentBasic;
 import org.chromium.chrome.browser.feedback.FragmentHelpAndFeedbackLauncher;
 import org.chromium.chrome.browser.feedback.HelpAndFeedbackLauncherImpl;
+import org.chromium.chrome.browser.history.HistoryAccessAuthenticator;
 import org.chromium.chrome.browser.history.HistoryActivity;
 import org.chromium.chrome.browser.image_descriptions.ImageDescriptionsController;
 import org.chromium.chrome.browser.image_descriptions.ImageDescriptionsSettings;
@@ -417,12 +418,18 @@ public class SettingsActivity extends ChromeBaseAppCompatActivity
             Runnable openHistoryRunnable = () -> {
                 // TODO(crbug.com/1286276): Opening History overrides the last active tab. Fix it.
                 Activity activity = fragment.getActivity();
+                if (activity == null) return;
                 Intent intent = new Intent();
                 intent.setClass(activity, HistoryActivity.class);
                 intent.putExtra(IntentHandler.EXTRA_INCOGNITO_MODE, false);
                 activity.startActivity(intent);
             };
-            ((AdMeasurementFragment) fragment).setSetHistoryHelper(openHistoryRunnable);
+            ((AdMeasurementFragment) fragment).setSetHistoryHelper(() -> {
+                Activity activity = fragment.getActivity();
+                if (activity != null) {
+                    HistoryAccessAuthenticator.authenticate(activity, openHistoryRunnable);
+                }
+            });
         }
         if (fragment instanceof FlocSettingsFragment) {
             ((FlocSettingsFragment) fragment)

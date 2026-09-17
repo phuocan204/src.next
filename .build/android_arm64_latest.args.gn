@@ -1,0 +1,27 @@
+target_os = "android"
+target_cpu = "arm64"
+
+is_debug = false
+is_official_build = true
+is_component_build = false
+
+# ThinLTO makes the final Android link exceptionally slow and memory hungry on a
+# local 7 GB WSL machine.  The APK remains a release build; this only trades a
+# small amount of native-code optimization for a materially faster local build.
+use_thin_lto = false
+
+symbol_level = 0
+blink_symbol_level = 0
+treat_warnings_as_errors = false
+
+use_remoteexec = false
+use_siso = false
+
+# Chromium 154's maintained Android extension UI is guarded by the desktop-Android build mode.
+# This enables the extensions toolbar, action popup, per-site access controls, context menus,
+# chrome://extensions and Chrome Web Store integration in the main Kiwi build.
+is_desktop_android = true
+
+# The clean checkout does not contain the optional desktop-x64 builtins profile. Disabling this
+# optimization avoids a profile-download dependency without disabling V8 or extension support.
+v8_enable_builtins_optimization = false

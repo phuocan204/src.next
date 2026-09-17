@@ -31,6 +31,12 @@
         android:title="@string/accessibility_preferences_open_in_external_application_title" />
 
     <org.chromium.components.browser_ui.settings.ChromeBaseCheckBoxPreference
+        android:key="video_assistant_enabled"
+        android:defaultValue="true"
+        android:summary="@string/video_assistant_summary"
+        android:title="@string/video_assistant_title" />
+
+    <org.chromium.components.browser_ui.settings.ChromeBaseCheckBoxPreference
         android:key="side_swipe_mode_enabled"
         android:summary="@string/accessibility_preferences_enable_side_swipe_summary"
         android:title="@string/accessibility_preferences_enable_side_swipe_title" />

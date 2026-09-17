@@ -1,0 +1,14 @@
+target_os = "android"
+target_cpu = "arm64"
+is_debug = false
+is_official_build = true
+symbol_level = 0
+treat_warnings_as_errors = false
+use_remoteexec = false
+use_siso = false
+enable_extensions = false
+is_desktop_android = true
+# The clean checkout does not download the desktop-x64 V8 builtins profile used only by official
+# PGO optimization. Disable that optimization for extension bring-up; it does not remove extension
+# runtime functionality.
+v8_enable_builtins_optimization = false
